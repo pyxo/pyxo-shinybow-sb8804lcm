@@ -2,8 +2,15 @@
   "config": {
     "step": {
       "user": {
-        "title": "Pyxo Shinybow SB-8804LCM",
-        "description": "Connect to a Shinybow SB-8804LCM 8x8 Digital Audio Matrix through a local RS232 serial port. Serial ports shown prefer /dev/serial/by-id paths when available.",
+        "title": "Connection type",
+        "description": "Choose how Home Assistant will connect to the Shinybow SB-8804LCM.",
+        "data": {
+          "connection_type": "Connection type"
+        }
+      },
+      "local": {
+        "title": "Local RS232",
+        "description": "Connect through a serial port on the Home Assistant server.",
         "data": {
           "name": "Name",
           "serial_port": "Serial port",
@@ -14,55 +21,64 @@
           "flow_control": "Flow control"
         }
       },
+      "tcp": {
+        "title": "TCP/IP to RS232",
+        "description": "Connect through a TCP/IP to RS232 adapter, bridge, or serial server.",
+        "data": {
+          "name": "Name",
+          "host": "Host",
+          "port": "Port"
+        }
+      },
       "names": {
         "title": "Name inputs and outputs",
-        "description": "Set friendly names for the matrix inputs and outputs. These names are used by the source selectors and entity names.",
+        "description": "Set friendly names for the matrix inputs and outputs.",
         "data": {
-          "input_1_name": "Input 1 name",
-          "input_2_name": "Input 2 name",
-          "input_3_name": "Input 3 name",
-          "input_4_name": "Input 4 name",
-          "input_5_name": "Input 5 name",
-          "input_6_name": "Input 6 name",
-          "input_7_name": "Input 7 name",
-          "input_8_name": "Input 8 name",
-          "output_1_name": "Output 1 name",
-          "output_2_name": "Output 2 name",
-          "output_3_name": "Output 3 name",
-          "output_4_name": "Output 4 name",
-          "output_5_name": "Output 5 name",
-          "output_6_name": "Output 6 name",
-          "output_7_name": "Output 7 name",
-          "output_8_name": "Output 8 name"
+          "input_1_name": "Input 1",
+          "input_2_name": "Input 2",
+          "input_3_name": "Input 3",
+          "input_4_name": "Input 4",
+          "input_5_name": "Input 5",
+          "input_6_name": "Input 6",
+          "input_7_name": "Input 7",
+          "input_8_name": "Input 8",
+          "output_1_name": "Output 1",
+          "output_2_name": "Output 2",
+          "output_3_name": "Output 3",
+          "output_4_name": "Output 4",
+          "output_5_name": "Output 5",
+          "output_6_name": "Output 6",
+          "output_7_name": "Output 7",
+          "output_8_name": "Output 8"
         }
       }
     },
     "abort": {
-      "already_configured": "This serial port is already configured."
+      "already_configured": "This connection is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Name inputs and outputs",
-        "description": "Set friendly names for the matrix inputs and outputs. These names are used by the source selectors and entity names.",
+        "description": "Set friendly names for the matrix inputs and outputs.",
         "data": {
-          "input_1_name": "Input 1 name",
-          "input_2_name": "Input 2 name",
-          "input_3_name": "Input 3 name",
-          "input_4_name": "Input 4 name",
-          "input_5_name": "Input 5 name",
-          "input_6_name": "Input 6 name",
-          "input_7_name": "Input 7 name",
-          "input_8_name": "Input 8 name",
-          "output_1_name": "Output 1 name",
-          "output_2_name": "Output 2 name",
-          "output_3_name": "Output 3 name",
-          "output_4_name": "Output 4 name",
-          "output_5_name": "Output 5 name",
-          "output_6_name": "Output 6 name",
-          "output_7_name": "Output 7 name",
-          "output_8_name": "Output 8 name"
+          "input_1_name": "Input 1",
+          "input_2_name": "Input 2",
+          "input_3_name": "Input 3",
+          "input_4_name": "Input 4",
+          "input_5_name": "Input 5",
+          "input_6_name": "Input 6",
+          "input_7_name": "Input 7",
+          "input_8_name": "Input 8",
+          "output_1_name": "Output 1",
+          "output_2_name": "Output 2",
+          "output_3_name": "Output 3",
+          "output_4_name": "Output 4",
+          "output_5_name": "Output 5",
+          "output_6_name": "Output 6",
+          "output_7_name": "Output 7",
+          "output_8_name": "Output 8"
         }
       }
     }

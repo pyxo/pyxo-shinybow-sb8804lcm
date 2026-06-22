@@ -15,10 +15,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import (
   CONF_BAUDRATE,
   CONF_BYTESIZE,
+  CONF_CONNECTION_TYPE,
   CONF_FLOW_CONTROL,
+  CONF_HOST,
   CONF_PARITY,
+  CONF_PORT,
   CONF_SERIAL_PORT,
   CONF_STOPBITS,
+  CONNECTION_TYPE_TCP,
   DATA_BALANCE,
   DATA_ROUTE,
   DATA_VOLUME,
@@ -37,19 +41,25 @@ OUTPUTALL_RE = re.compile(r"OUTPUTALL\s+([0-9]{24});", re.IGNORECASE)
 VALUE_RE = re.compile(r"#([0-9]{3});", re.IGNORECASE)
 
 
-class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int | None]]]):
+class PyxoShinybowSB8804LCMCoordinator(
+  DataUpdateCoordinator[dict[str, dict[int, int | None]]]
+):
   def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
     self.entry = entry
 
-    self.serial_port = entry.data[CONF_SERIAL_PORT]
-    self.baudrate = entry.data[CONF_BAUDRATE]
-    self.bytesize = entry.data[CONF_BYTESIZE]
-    self.parity = entry.data[CONF_PARITY]
-    self.stopbits = entry.data[CONF_STOPBITS]
-    self.flow_control = entry.data[CONF_FLOW_CONTROL]
-    self.connected = False
+    self.connection_type = entry.data[CONF_CONNECTION_TYPE]
 
-    self._serial_lock = asyncio.Lock()
+    self.serial_port = entry.data.get(CONF_SERIAL_PORT)
+    self.baudrate = entry.data.get(CONF_BAUDRATE)
+    self.bytesize = entry.data.get(CONF_BYTESIZE)
+    self.parity = entry.data.get(CONF_PARITY)
+    self.stopbits = entry.data.get(CONF_STOPBITS)
+    self.flow_control = entry.data.get(CONF_FLOW_CONTROL)
+
+    self.host = entry.data.get(CONF_HOST)
+    self.port = entry.data.get(CONF_PORT)
+
+    self._connection_lock = asyncio.Lock()
 
     super().__init__(
       hass,
@@ -69,15 +79,15 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
     )
 
   async def _async_update_data(self) -> dict[str, dict[int, int | None]]:
-    routes = {
+    routes: dict[int, int | None] = {
       output_number: None
       for output_number in range(1, OUTPUT_COUNT + 1)
     }
-    volumes = {
+    volumes: dict[int, int | None] = {
       output_number: None
       for output_number in range(1, OUTPUT_COUNT + 1)
     }
-    balances = {
+    balances: dict[int, int | None] = {
       output_number: None
       for output_number in range(1, OUTPUT_COUNT + 1)
     }
@@ -89,8 +99,6 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
         volumes[output_number] = await self.async_get_volume(output_number)
         balances[output_number] = await self.async_get_balance(output_number)
 
-      self.connected = True
-
       return {
         DATA_ROUTE: routes,
         DATA_VOLUME: volumes,
@@ -98,7 +106,6 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
       }
 
     except Exception as err:
-      self.connected = False
       _LOGGER.warning(
         "Could not update Shinybow SB-8804LCM. Device may be disconnected: %s",
         err,
@@ -118,7 +125,60 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
     command: str,
     timeout: float = 1.5,
   ) -> str:
-    async with self._serial_lock:
+    if self.connection_type == CONNECTION_TYPE_TCP:
+      return await self._async_send_tcp_command(command, timeout)
+
+    return await self._async_send_serial_command(command, timeout)
+
+  async def _async_send_tcp_command(
+    self,
+    command: str,
+    timeout: float,
+  ) -> str:
+    async with self._connection_lock:
+      _LOGGER.debug(
+        "Opening TCP/IP to RS232 connection host=%s port=%s",
+        self.host,
+        self.port,
+      )
+      _LOGGER.debug("Sending Shinybow command: %s", command)
+
+      try:
+        reader, writer = await asyncio.open_connection(
+          self.host,
+          self.port,
+        )
+
+        try:
+          writer.write(command.encode("ascii"))
+          await writer.drain()
+
+          try:
+            response = await asyncio.wait_for(reader.readuntil(b";"), timeout)
+          except asyncio.TimeoutError:
+            response = b""
+          except asyncio.IncompleteReadError as err:
+            response = err.partial
+
+          text = response.decode("ascii", errors="ignore").strip()
+          _LOGGER.debug("Shinybow TCP response: %s", text)
+          return text
+
+        finally:
+          writer.close()
+          await writer.wait_closed()
+
+      except OSError as err:
+        raise RuntimeError(
+          f"TCP/IP to RS232 connection error to {self.host}:{self.port}: {err}"
+        ) from err
+
+  async def _async_send_serial_command(
+    self,
+    command: str,
+    timeout: float,
+  ) -> str:
+    async with self._connection_lock:
       _LOGGER.debug(
         "Opening serial port %s baud=%s bytesize=%s parity=%s stopbits=%s flow=%s",
         self.serial_port,
@@ -154,7 +214,7 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
             response = err.partial
 
           text = response.decode("ascii", errors="ignore").strip()
-          _LOGGER.debug("Shinybow response: %s", text)
+          _LOGGER.debug("Shinybow serial response: %s", text)
           return text
 
         finally:
@@ -162,7 +222,9 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
           await writer.wait_closed()
 
       except OSError as err:
-        raise RuntimeError(f"Serial port error on {self.serial_port}: {err}") from err
+        raise RuntimeError(
+          f"Serial port error on {self.serial_port}: {err}"
+        ) from err
 
   async def async_get_all_outputs(self) -> dict[int, int]:
     response = await self.async_send_command("OUTPUTALL ?;")
@@ -210,7 +272,6 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
   async def async_set_volume(self, output_number: int, volume: int) -> None:
     command = f"VOLUME{output_number:03d} {volume:03d};"
     await self.async_send_command(command, timeout=0.75)
-    self.connected = True
 
     if self.data is not None:
       self.data[DATA_VOLUME][output_number] = volume
@@ -219,7 +280,6 @@ class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int,
   async def async_set_balance(self, output_number: int, balance: int) -> None:
     command = f"BALANCE{output_number:03d} {balance:03d};"
     await self.async_send_command(command, timeout=0.75)
-    self.connected = True
 
     if self.data is not None:
       self.data[DATA_BALANCE][output_number] = balance

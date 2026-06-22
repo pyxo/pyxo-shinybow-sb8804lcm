@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .config_flow import get_output_names
 from .const import (
   DATA_BALANCE,
   DATA_VOLUME,
@@ -14,7 +15,6 @@ from .const import (
   OUTPUT_COUNT,
 )
 from .coordinator import PyxoShinybowSB8804LCMCoordinator
-from .helpers import get_output_names
 
 
 async def async_setup_entry(
@@ -33,7 +33,10 @@ async def async_setup_entry(
   async_add_entities(entities)
 
 
-class PyxoShinybowOutputVolumeNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], NumberEntity):
+class PyxoShinybowOutputVolumeNumber(
+  CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator],
+  NumberEntity,
+):
   def __init__(
     self,
     coordinator: PyxoShinybowSB8804LCMCoordinator,
@@ -59,7 +62,7 @@ class PyxoShinybowOutputVolumeNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoor
 
   @property
   def available(self) -> bool:
-    return self.coordinator.connected
+    return self.coordinator.last_update_success
 
   @property
   def name(self) -> str:
@@ -80,7 +83,10 @@ class PyxoShinybowOutputVolumeNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoor
     )
 
 
-class PyxoShinybowOutputBalanceNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], NumberEntity):
+class PyxoShinybowOutputBalanceNumber(
+  CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator],
+  NumberEntity,
+):
   def __init__(
     self,
     coordinator: PyxoShinybowSB8804LCMCoordinator,
@@ -93,7 +99,7 @@ class PyxoShinybowOutputBalanceNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoo
     self._output_number = output_number
 
     self._attr_unique_id = f"{entry.entry_id}_output_{output_number}_balance"
-    self._attr_icon = "mdi:scale-balance"
+    self._attr_icon = "mdi:tune-variant"
     self._attr_native_min_value = 0
     self._attr_native_max_value = 100
     self._attr_native_step = 1
@@ -106,7 +112,7 @@ class PyxoShinybowOutputBalanceNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoo
 
   @property
   def available(self) -> bool:
-    return self.coordinator.connected
+    return self.coordinator.last_update_success
 
   @property
   def name(self) -> str:

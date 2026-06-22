@@ -1,9 +1,12 @@
 DOMAIN = "pyxo_shinybow_sb8804lcm"
 
+MANUFACTURER = "Pyxo Enterprises"
 DEVICE_MANUFACTURER = "Shinybow"
 DEVICE_MODEL = "SB-8804LCM 8x8 Digital Audio Matrix"
 
 CONF_NAME = "name"
+CONF_CONNECTION_TYPE = "connection_type"
+
 CONF_SERIAL_PORT = "serial_port"
 CONF_BAUDRATE = "baudrate"
 CONF_BYTESIZE = "bytesize"
@@ -11,8 +14,14 @@ CONF_PARITY = "parity"
 CONF_STOPBITS = "stopbits"
 CONF_FLOW_CONTROL = "flow_control"
 
+CONF_HOST = "host"
+CONF_PORT = "port"
+
 CONF_INPUT_NAMES = "input_names"
 CONF_OUTPUT_NAMES = "output_names"
+
+CONNECTION_TYPE_LOCAL = "local"
+CONNECTION_TYPE_TCP = "tcp"
 
 DEFAULT_NAME = "Shinybow SB-8804LCM"
 DEFAULT_SERIAL_PORT = "/dev/ttyUSB0"
@@ -21,6 +30,9 @@ DEFAULT_BYTESIZE = 8
 DEFAULT_PARITY = "N"
 DEFAULT_STOPBITS = 1
 DEFAULT_FLOW_CONTROL = "none"
+
+DEFAULT_HOST = "192.168.1.100"
+DEFAULT_PORT = 4999
 
 FLOW_CONTROL_NONE = "none"
 FLOW_CONTROL_RTSCTS = "rtscts"

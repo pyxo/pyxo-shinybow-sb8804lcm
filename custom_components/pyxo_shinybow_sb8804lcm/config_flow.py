@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
+import glob
+import logging
 
 import voluptuous as vol
 
@@ -10,18 +11,25 @@ from homeassistant.helpers import selector
 from .const import (
   CONF_BAUDRATE,
   CONF_BYTESIZE,
+  CONF_CONNECTION_TYPE,
   CONF_FLOW_CONTROL,
+  CONF_HOST,
   CONF_INPUT_NAMES,
   CONF_NAME,
   CONF_OUTPUT_NAMES,
   CONF_PARITY,
+  CONF_PORT,
   CONF_SERIAL_PORT,
   CONF_STOPBITS,
+  CONNECTION_TYPE_LOCAL,
+  CONNECTION_TYPE_TCP,
   DEFAULT_BAUDRATE,
   DEFAULT_BYTESIZE,
   DEFAULT_FLOW_CONTROL,
+  DEFAULT_HOST,
   DEFAULT_NAME,
   DEFAULT_PARITY,
+  DEFAULT_PORT,
   DEFAULT_SERIAL_PORT,
   DEFAULT_STOPBITS,
   DOMAIN,
@@ -32,12 +40,8 @@ from .const import (
   INPUT_COUNT,
   OUTPUT_COUNT,
 )
-from .helpers import (
-  default_input_names,
-  default_output_names,
-  get_input_names,
-  get_output_names,
-)
+
+_LOGGER = logging.getLogger(__name__)
 
 BAUDRATE_OPTIONS = [
   "1200",
@@ -67,49 +71,120 @@ FLOW_CONTROL_OPTIONS = [
   selector.SelectOptionDict(value=FLOW_CONTROL_DSRDTR, label="DSR/DTR"),
 ]
 
+CONNECTION_TYPE_OPTIONS = [
+  selector.SelectOptionDict(value=CONNECTION_TYPE_LOCAL, label="Local RS232"),
+  selector.SelectOptionDict(value=CONNECTION_TYPE_TCP, label="TCP/IP to RS232"),
+]
 
-def _get_by_id_serial_ports() -> list[str]:
-  by_id_path = Path("/dev/serial/by-id")
 
-  if by_id_path.exists():
-    ports = sorted(str(path) for path in by_id_path.iterdir() if path.exists())
-    if ports:
-      return ports
+def _default_input_names() -> dict[str, str]:
+  return {
+    str(number): f"Input {number}"
+    for number in range(1, INPUT_COUNT + 1)
+  }
 
-  try:
-    from serial.tools import list_ports
-  except ImportError:
-    return [DEFAULT_SERIAL_PORT]
 
-  ports = sorted(port.device for port in list_ports.comports() if port.device)
+def _default_output_names() -> dict[str, str]:
+  return {
+    str(number): f"Output {number}"
+    for number in range(1, OUTPUT_COUNT + 1)
+  }
 
-  if ports:
-    return ports
 
-  return [DEFAULT_SERIAL_PORT]
+def get_input_names(entry: config_entries.ConfigEntry) -> dict[str, str]:
+  names = _default_input_names()
+  names.update(entry.options.get(CONF_INPUT_NAMES, {}))
+  return names
+
+
+def get_output_names(entry: config_entries.ConfigEntry) -> dict[str, str]:
+  names = _default_output_names()
+  names.update(entry.options.get(CONF_OUTPUT_NAMES, {}))
+  return names
+
+
+def _get_serial_ports() -> list[str]:
+  ports: list[str] = []
+
+  by_id_ports = sorted(glob.glob("/dev/serial/by-id/*"))
+  ports.extend(by_id_ports)
+
+  if not ports:
+    try:
+      from serial.tools import list_ports
+
+      for port in list_ports.comports():
+        if port.device:
+          ports.append(port.device)
+    except ImportError:
+      _LOGGER.debug("serial.tools.list_ports is not available")
+
+  if DEFAULT_SERIAL_PORT not in ports:
+    ports.append(DEFAULT_SERIAL_PORT)
+
+  return ports
 
 
 class PyxoShinybowSB8804LCMConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
   VERSION = 1
 
   def __init__(self) -> None:
-    self._setup_data: dict | None = None
+    self._data: dict = {}
 
   @staticmethod
-  def async_get_options_flow(config_entry):
+  def async_get_options_flow(config_entry: config_entries.ConfigEntry):
     return PyxoShinybowSB8804LCMOptionsFlow(config_entry)
 
   async def async_step_user(self, user_input=None):
+    if user_input is not None:
+      self._data[CONF_CONNECTION_TYPE] = user_input[CONF_CONNECTION_TYPE]
+
+      if user_input[CONF_CONNECTION_TYPE] == CONNECTION_TYPE_LOCAL:
+        return await self.async_step_local()
+
+      return await self.async_step_tcp()
+
+    schema = vol.Schema(
+      {
+        vol.Required(
+          CONF_CONNECTION_TYPE,
+          default=CONNECTION_TYPE_LOCAL,
+        ): selector.SelectSelector(
+          selector.SelectSelectorConfig(
+            options=CONNECTION_TYPE_OPTIONS,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+          )
+        ),
+      }
+    )
+
+    return self.async_show_form(
+      step_id="user",
+      data_schema=schema,
+    )
+
+  async def async_step_local(self, user_input=None):
     errors = {}
-    serial_ports = await self.hass.async_add_executor_job(_get_by_id_serial_ports)
+
+    serial_ports = await self.hass.async_add_executor_job(_get_serial_ports)
 
     if user_input is not None:
-      self._setup_data = dict(user_input)
-      self._setup_data[CONF_BAUDRATE] = int(self._setup_data[CONF_BAUDRATE])
-      self._setup_data[CONF_BYTESIZE] = int(self._setup_data[CONF_BYTESIZE])
-      self._setup_data[CONF_STOPBITS] = float(self._setup_data[CONF_STOPBITS])
+      user_input = dict(user_input)
 
-      await self.async_set_unique_id(self._setup_data[CONF_SERIAL_PORT])
+      self._data.update(
+        {
+          CONF_NAME: user_input[CONF_NAME],
+          CONF_SERIAL_PORT: user_input[CONF_SERIAL_PORT],
+          CONF_BAUDRATE: int(user_input[CONF_BAUDRATE]),
+          CONF_BYTESIZE: int(user_input[CONF_BYTESIZE]),
+          CONF_PARITY: user_input[CONF_PARITY],
+          CONF_STOPBITS: float(user_input[CONF_STOPBITS]),
+          CONF_FLOW_CONTROL: user_input[CONF_FLOW_CONTROL],
+        }
+      )
+
+      unique_id = f"local:{self._data[CONF_SERIAL_PORT]}"
+      await self.async_set_unique_id(unique_id)
       self._abort_if_unique_id_configured()
 
       return await self.async_step_names()
@@ -159,15 +234,46 @@ class PyxoShinybowSB8804LCMConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     )
 
     return self.async_show_form(
-      step_id="user",
+      step_id="local",
+      data_schema=schema,
+      errors=errors,
+    )
+
+  async def async_step_tcp(self, user_input=None):
+    errors = {}
+
+    if user_input is not None:
+      user_input = dict(user_input)
+
+      self._data.update(
+        {
+          CONF_NAME: user_input[CONF_NAME],
+          CONF_HOST: user_input[CONF_HOST],
+          CONF_PORT: int(user_input[CONF_PORT]),
+        }
+      )
+
+      unique_id = f"tcp:{self._data[CONF_HOST]}:{self._data[CONF_PORT]}"
+      await self.async_set_unique_id(unique_id)
+      self._abort_if_unique_id_configured()
+
+      return await self.async_step_names()
+
+    schema = vol.Schema(
+      {
+        vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
+        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+      }
+    )
+
+    return self.async_show_form(
+      step_id="tcp",
       data_schema=schema,
       errors=errors,
     )
 
   async def async_step_names(self, user_input=None):
-    if self._setup_data is None:
-      return await self.async_step_user()
-
     if user_input is not None:
       input_names = {}
       output_names = {}
@@ -179,16 +285,16 @@ class PyxoShinybowSB8804LCMConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         output_names[str(number)] = user_input[f"output_{number}_name"]
 
       return self.async_create_entry(
-        title=self._setup_data[CONF_NAME],
-        data=self._setup_data,
+        title=self._data[CONF_NAME],
+        data=self._data,
         options={
           CONF_INPUT_NAMES: input_names,
           CONF_OUTPUT_NAMES: output_names,
         },
       )
 
-    input_names = default_input_names()
-    output_names = default_output_names()
+    input_names = _default_input_names()
+    output_names = _default_output_names()
     schema_fields = {}
 
     for number in range(1, INPUT_COUNT + 1):

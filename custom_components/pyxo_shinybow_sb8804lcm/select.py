@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .config_flow import get_input_names, get_output_names
 from .const import (
   DATA_ROUTE,
   DOMAIN,
@@ -14,7 +15,6 @@ from .const import (
   OUTPUT_COUNT,
 )
 from .coordinator import PyxoShinybowSB8804LCMCoordinator
-from .helpers import get_input_names, get_output_names
 
 
 async def async_setup_entry(
@@ -61,7 +61,10 @@ def _input_number_from_option(entry: ConfigEntry, option: str) -> int:
   )
 
 
-class PyxoShinybowAllOutputsSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], SelectEntity):
+class PyxoShinybowAllOutputsSelect(
+  CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator],
+  SelectEntity,
+):
   def __init__(
     self,
     coordinator: PyxoShinybowSB8804LCMCoordinator,
@@ -81,7 +84,7 @@ class PyxoShinybowAllOutputsSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordi
 
   @property
   def available(self) -> bool:
-    return self.coordinator.connected
+    return self.coordinator.last_update_success
 
   @property
   def options(self) -> list[str]:
@@ -115,10 +118,14 @@ class PyxoShinybowAllOutputsSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordi
 
   async def async_select_option(self, option: str) -> None:
     input_number = _input_number_from_option(self._entry, option)
+
     await self.coordinator.async_set_all_outputs(input_number)
 
 
-class PyxoShinybowOutputSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], SelectEntity):
+class PyxoShinybowOutputSelect(
+  CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator],
+  SelectEntity,
+):
   def __init__(
     self,
     coordinator: PyxoShinybowSB8804LCMCoordinator,
@@ -139,7 +146,7 @@ class PyxoShinybowOutputSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinato
 
   @property
   def available(self) -> bool:
-    return self.coordinator.connected
+    return self.coordinator.last_update_success
 
   @property
   def name(self) -> str:
