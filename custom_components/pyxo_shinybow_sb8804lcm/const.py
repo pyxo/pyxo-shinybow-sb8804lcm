@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 DOMAIN = "pyxo_shinybow_sb8804lcm"
 
 DEVICE_MANUFACTURER = "Shinybow"

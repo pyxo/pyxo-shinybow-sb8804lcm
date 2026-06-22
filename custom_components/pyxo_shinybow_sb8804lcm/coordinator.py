@@ -10,7 +10,7 @@ import serialx
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
   CONF_BAUDRATE,
@@ -37,7 +37,7 @@ OUTPUTALL_RE = re.compile(r"OUTPUTALL\s+([0-9]{24});", re.IGNORECASE)
 VALUE_RE = re.compile(r"#([0-9]{3});", re.IGNORECASE)
 
 
-class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int]]]):
+class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int | None]]]):
   def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
     self.entry = entry
 
@@ -67,11 +67,22 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
       sw_version="RS-232 Protocol V3",
     )
 
-  async def _async_update_data(self) -> dict[str, dict[int, int]]:
+  async def _async_update_data(self) -> dict[str, dict[int, int | None]]:
+    routes = {
+      output_number: None
+      for output_number in range(1, OUTPUT_COUNT + 1)
+    }
+    volumes = {
+      output_number: None
+      for output_number in range(1, OUTPUT_COUNT + 1)
+    }
+    balances = {
+      output_number: None
+      for output_number in range(1, OUTPUT_COUNT + 1)
+    }
+
     try:
       routes = await self.async_get_all_outputs()
-      volumes = {}
-      balances = {}
 
       for output_number in range(1, OUTPUT_COUNT + 1):
         volumes[output_number] = await self.async_get_volume(output_number)
@@ -84,7 +95,19 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
       }
 
     except Exception as err:
-      raise UpdateFailed(f"Could not update Shinybow SB-8804LCM: {err}") from err
+      _LOGGER.warning(
+        "Could not update Shinybow SB-8804LCM. Device may be disconnected: %s",
+        err,
+      )
+
+      if self.data is not None:
+        return self.data
+
+      return {
+        DATA_ROUTE: routes,
+        DATA_VOLUME: volumes,
+        DATA_BALANCE: balances,
+      }
 
   async def async_send_command(
     self,
@@ -185,17 +208,13 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
     await self.async_send_command(command, timeout=0.75)
 
     if self.data is not None:
-      data = dict(self.data)
-      data[DATA_VOLUME] = dict(data[DATA_VOLUME])
-      data[DATA_VOLUME][output_number] = volume
-      self.async_set_updated_data(data)
+      self.data[DATA_VOLUME][output_number] = volume
+      self.async_set_updated_data(self.data)
 
   async def async_set_balance(self, output_number: int, balance: int) -> None:
     command = f"BALANCE{output_number:03d} {balance:03d};"
     await self.async_send_command(command, timeout=0.75)
 
     if self.data is not None:
-      data = dict(self.data)
-      data[DATA_BALANCE] = dict(data[DATA_BALANCE])
-      data[DATA_BALANCE][output_number] = balance
-      self.async_set_updated_data(data)
+      self.data[DATA_BALANCE][output_number] = balance
+      self.async_set_updated_data(self.data)

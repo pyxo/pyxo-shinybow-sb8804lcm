@@ -8,5 +8,5 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["serialx==1.8.0"],
-  "version": "0.1.0"
+  "version": "0.1.2"
 }

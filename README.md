@@ -11,6 +11,7 @@ Home Assistant custom integration by **Pyxo Enterprises** for controlling a **Sh
 - Per-output volume control
 - Per-output balance control
 - All-outputs source selector
+- Can be configured even when the matrix is disconnected or powered off
 
 ## Supported device
 
@@ -57,9 +58,11 @@ The integration creates:
 
 Input and output names can be customized from the integration options.
 
-## Serial port recommendation
+## Serial port notes
 
 Use `/dev/serial/by-id/...` when possible instead of `/dev/ttyUSB0`, because `/dev/ttyUSB0` can change after reboot.
+
+The integration can be added even if the matrix is not connected. Entities will remain unavailable or unknown until the matrix responds.
 
 ## Created by
 

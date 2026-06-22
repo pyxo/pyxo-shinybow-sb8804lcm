@@ -80,6 +80,10 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
     return self.coordinator.device_info
 
   @property
+  def available(self) -> bool:
+    return self.coordinator.last_update_success
+
+  @property
   def options(self) -> list[str]:
     return _input_options(self._entry)
 
@@ -95,6 +99,9 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
 
     selected_inputs = set(routes.values())
 
+    if None in selected_inputs:
+      return None
+
     if len(selected_inputs) != 1:
       return None
 
@@ -108,7 +115,6 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
 
   async def async_select_option(self, option: str) -> None:
     input_number = _input_number_from_option(self._entry, option)
-
     await self.coordinator.async_set_all_outputs(input_number)
 
 
@@ -130,6 +136,10 @@ class ShinybowOutputSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], Sele
   @property
   def device_info(self):
     return self.coordinator.device_info
+
+  @property
+  def available(self) -> bool:
+    return self.coordinator.last_update_success
 
   @property
   def name(self) -> str:

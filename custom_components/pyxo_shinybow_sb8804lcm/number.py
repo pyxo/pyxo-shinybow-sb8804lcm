@@ -58,6 +58,10 @@ class ShinybowOutputVolumeNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator]
     return self.coordinator.device_info
 
   @property
+  def available(self) -> bool:
+    return self.coordinator.last_update_success
+
+  @property
   def name(self) -> str:
     output_names = get_output_names(self._entry)
     return f"{output_names[str(self._output_number)]} Volume"
@@ -99,6 +103,10 @@ class ShinybowOutputBalanceNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator
   @property
   def device_info(self):
     return self.coordinator.device_info
+
+  @property
+  def available(self) -> bool:
+    return self.coordinator.last_update_success
 
   @property
   def name(self) -> str:
