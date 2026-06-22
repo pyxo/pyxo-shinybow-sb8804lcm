@@ -13,7 +13,7 @@ from .const import (
   DOMAIN,
   OUTPUT_COUNT,
 )
-from .coordinator import ShinybowSB8804LCMCoordinator
+from .coordinator import PyxoShinybowSB8804LCMCoordinator
 from .helpers import get_output_names
 
 
@@ -22,21 +22,21 @@ async def async_setup_entry(
   entry: ConfigEntry,
   async_add_entities: AddEntitiesCallback,
 ) -> None:
-  coordinator: ShinybowSB8804LCMCoordinator = hass.data[DOMAIN][entry.entry_id]
+  coordinator: PyxoShinybowSB8804LCMCoordinator = hass.data[DOMAIN][entry.entry_id]
 
   entities = []
 
   for output_number in range(1, OUTPUT_COUNT + 1):
-    entities.append(ShinybowOutputVolumeNumber(coordinator, entry, output_number))
-    entities.append(ShinybowOutputBalanceNumber(coordinator, entry, output_number))
+    entities.append(PyxoShinybowOutputVolumeNumber(coordinator, entry, output_number))
+    entities.append(PyxoShinybowOutputBalanceNumber(coordinator, entry, output_number))
 
   async_add_entities(entities)
 
 
-class ShinybowOutputVolumeNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator], NumberEntity):
+class PyxoShinybowOutputVolumeNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], NumberEntity):
   def __init__(
     self,
-    coordinator: ShinybowSB8804LCMCoordinator,
+    coordinator: PyxoShinybowSB8804LCMCoordinator,
     entry: ConfigEntry,
     output_number: int,
   ) -> None:
@@ -59,7 +59,7 @@ class ShinybowOutputVolumeNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator]
 
   @property
   def available(self) -> bool:
-    return self.coordinator.last_update_success
+    return self.coordinator.connected
 
   @property
   def name(self) -> str:
@@ -80,10 +80,10 @@ class ShinybowOutputVolumeNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator]
     )
 
 
-class ShinybowOutputBalanceNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator], NumberEntity):
+class PyxoShinybowOutputBalanceNumber(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], NumberEntity):
   def __init__(
     self,
-    coordinator: ShinybowSB8804LCMCoordinator,
+    coordinator: PyxoShinybowSB8804LCMCoordinator,
     entry: ConfigEntry,
     output_number: int,
   ) -> None:
@@ -106,7 +106,7 @@ class ShinybowOutputBalanceNumber(CoordinatorEntity[ShinybowSB8804LCMCoordinator
 
   @property
   def available(self) -> bool:
-    return self.coordinator.last_update_success
+    return self.coordinator.connected
 
   @property
   def name(self) -> str:

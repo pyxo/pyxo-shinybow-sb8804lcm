@@ -4,13 +4,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .coordinator import ShinybowSB8804LCMCoordinator
+from .coordinator import PyxoShinybowSB8804LCMCoordinator
 
 PLATFORMS = ["select", "number"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-  coordinator = ShinybowSB8804LCMCoordinator(hass, entry)
+  coordinator = PyxoShinybowSB8804LCMCoordinator(hass, entry)
 
   hass.data.setdefault(DOMAIN, {})
   hass.data[DOMAIN][entry.entry_id] = coordinator

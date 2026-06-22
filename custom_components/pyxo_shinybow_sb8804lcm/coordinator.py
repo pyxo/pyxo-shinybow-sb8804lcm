@@ -37,7 +37,7 @@ OUTPUTALL_RE = re.compile(r"OUTPUTALL\s+([0-9]{24});", re.IGNORECASE)
 VALUE_RE = re.compile(r"#([0-9]{3});", re.IGNORECASE)
 
 
-class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int | None]]]):
+class PyxoShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int | None]]]):
   def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
     self.entry = entry
 
@@ -47,6 +47,7 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
     self.parity = entry.data[CONF_PARITY]
     self.stopbits = entry.data[CONF_STOPBITS]
     self.flow_control = entry.data[CONF_FLOW_CONTROL]
+    self.connected = False
 
     self._serial_lock = asyncio.Lock()
 
@@ -88,6 +89,8 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
         volumes[output_number] = await self.async_get_volume(output_number)
         balances[output_number] = await self.async_get_balance(output_number)
 
+      self.connected = True
+
       return {
         DATA_ROUTE: routes,
         DATA_VOLUME: volumes,
@@ -95,6 +98,7 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
       }
 
     except Exception as err:
+      self.connected = False
       _LOGGER.warning(
         "Could not update Shinybow SB-8804LCM. Device may be disconnected: %s",
         err,
@@ -206,6 +210,7 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
   async def async_set_volume(self, output_number: int, volume: int) -> None:
     command = f"VOLUME{output_number:03d} {volume:03d};"
     await self.async_send_command(command, timeout=0.75)
+    self.connected = True
 
     if self.data is not None:
       self.data[DATA_VOLUME][output_number] = volume
@@ -214,6 +219,7 @@ class ShinybowSB8804LCMCoordinator(DataUpdateCoordinator[dict[str, dict[int, int
   async def async_set_balance(self, output_number: int, balance: int) -> None:
     command = f"BALANCE{output_number:03d} {balance:03d};"
     await self.async_send_command(command, timeout=0.75)
+    self.connected = True
 
     if self.data is not None:
       self.data[DATA_BALANCE][output_number] = balance

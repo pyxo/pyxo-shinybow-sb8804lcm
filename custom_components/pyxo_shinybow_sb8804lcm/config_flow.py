@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+from pathlib import Path
 
 import voluptuous as vol
 
@@ -39,8 +39,6 @@ from .helpers import (
   get_output_names,
 )
 
-_LOGGER = logging.getLogger(__name__)
-
 BAUDRATE_OPTIONS = [
   "1200",
   "2400",
@@ -70,68 +68,56 @@ FLOW_CONTROL_OPTIONS = [
 ]
 
 
-def _get_serial_ports() -> list[str]:
+def _get_by_id_serial_ports() -> list[str]:
+  by_id_path = Path("/dev/serial/by-id")
+
+  if by_id_path.exists():
+    ports = sorted(str(path) for path in by_id_path.iterdir() if path.exists())
+    if ports:
+      return ports
+
   try:
     from serial.tools import list_ports
   except ImportError:
     return [DEFAULT_SERIAL_PORT]
 
-  ports = []
+  ports = sorted(port.device for port in list_ports.comports() if port.device)
 
-  for port in list_ports.comports():
-    if port.device:
-      label = port.device
+  if ports:
+    return ports
 
-      if port.description:
-        label = f"{port.device} - {port.description}"
-
-      ports.append(label)
-
-  if DEFAULT_SERIAL_PORT not in [port.split(" - ", 1)[0] for port in ports]:
-    ports.insert(0, DEFAULT_SERIAL_PORT)
-
-  return ports
-
-
-def _extract_port_device(value: str) -> str:
-  return value.split(" - ", 1)[0]
+  return [DEFAULT_SERIAL_PORT]
 
 
 class PyxoShinybowSB8804LCMConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
   VERSION = 1
 
+  def __init__(self) -> None:
+    self._setup_data: dict | None = None
+
   @staticmethod
-  def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+  def async_get_options_flow(config_entry):
     return PyxoShinybowSB8804LCMOptionsFlow(config_entry)
 
   async def async_step_user(self, user_input=None):
     errors = {}
-
-    serial_ports = await self.hass.async_add_executor_job(_get_serial_ports)
+    serial_ports = await self.hass.async_add_executor_job(_get_by_id_serial_ports)
 
     if user_input is not None:
-      user_input = dict(user_input)
-      user_input[CONF_SERIAL_PORT] = _extract_port_device(user_input[CONF_SERIAL_PORT])
-      user_input[CONF_BAUDRATE] = int(user_input[CONF_BAUDRATE])
-      user_input[CONF_BYTESIZE] = int(user_input[CONF_BYTESIZE])
-      user_input[CONF_STOPBITS] = float(user_input[CONF_STOPBITS])
+      self._setup_data = dict(user_input)
+      self._setup_data[CONF_BAUDRATE] = int(self._setup_data[CONF_BAUDRATE])
+      self._setup_data[CONF_BYTESIZE] = int(self._setup_data[CONF_BYTESIZE])
+      self._setup_data[CONF_STOPBITS] = float(self._setup_data[CONF_STOPBITS])
 
-      await self.async_set_unique_id(user_input[CONF_SERIAL_PORT])
+      await self.async_set_unique_id(self._setup_data[CONF_SERIAL_PORT])
       self._abort_if_unique_id_configured()
 
-      return self.async_create_entry(
-        title=user_input[CONF_NAME],
-        data=user_input,
-        options={
-          CONF_INPUT_NAMES: default_input_names(),
-          CONF_OUTPUT_NAMES: default_output_names(),
-        },
-      )
+      return await self.async_step_names()
 
     schema = vol.Schema(
       {
         vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
-        vol.Required(CONF_SERIAL_PORT, default=DEFAULT_SERIAL_PORT): selector.SelectSelector(
+        vol.Required(CONF_SERIAL_PORT, default=serial_ports[0]): selector.SelectSelector(
           selector.SelectSelectorConfig(
             options=serial_ports,
             custom_value=True,
@@ -178,10 +164,58 @@ class PyxoShinybowSB8804LCMConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
       errors=errors,
     )
 
+  async def async_step_names(self, user_input=None):
+    if self._setup_data is None:
+      return await self.async_step_user()
+
+    if user_input is not None:
+      input_names = {}
+      output_names = {}
+
+      for number in range(1, INPUT_COUNT + 1):
+        input_names[str(number)] = user_input[f"input_{number}_name"]
+
+      for number in range(1, OUTPUT_COUNT + 1):
+        output_names[str(number)] = user_input[f"output_{number}_name"]
+
+      return self.async_create_entry(
+        title=self._setup_data[CONF_NAME],
+        data=self._setup_data,
+        options={
+          CONF_INPUT_NAMES: input_names,
+          CONF_OUTPUT_NAMES: output_names,
+        },
+      )
+
+    input_names = default_input_names()
+    output_names = default_output_names()
+    schema_fields = {}
+
+    for number in range(1, INPUT_COUNT + 1):
+      schema_fields[
+        vol.Required(
+          f"input_{number}_name",
+          default=input_names[str(number)],
+        )
+      ] = str
+
+    for number in range(1, OUTPUT_COUNT + 1):
+      schema_fields[
+        vol.Required(
+          f"output_{number}_name",
+          default=output_names[str(number)],
+        )
+      ] = str
+
+    return self.async_show_form(
+      step_id="names",
+      data_schema=vol.Schema(schema_fields),
+    )
+
 
 class PyxoShinybowSB8804LCMOptionsFlow(config_entries.OptionsFlow):
   def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-    self.config_entry = config_entry
+    self._config_entry = config_entry
 
   async def async_step_init(self, user_input=None):
     if user_input is not None:
@@ -202,9 +236,8 @@ class PyxoShinybowSB8804LCMOptionsFlow(config_entries.OptionsFlow):
         },
       )
 
-    input_names = get_input_names(self.config_entry)
-    output_names = get_output_names(self.config_entry)
-
+    input_names = get_input_names(self._config_entry)
+    output_names = get_output_names(self._config_entry)
     schema_fields = {}
 
     for number in range(1, INPUT_COUNT + 1):

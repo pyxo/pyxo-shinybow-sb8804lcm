@@ -13,7 +13,7 @@ from .const import (
   OPTION_OFF,
   OUTPUT_COUNT,
 )
-from .coordinator import ShinybowSB8804LCMCoordinator
+from .coordinator import PyxoShinybowSB8804LCMCoordinator
 from .helpers import get_input_names, get_output_names
 
 
@@ -22,14 +22,14 @@ async def async_setup_entry(
   entry: ConfigEntry,
   async_add_entities: AddEntitiesCallback,
 ) -> None:
-  coordinator: ShinybowSB8804LCMCoordinator = hass.data[DOMAIN][entry.entry_id]
+  coordinator: PyxoShinybowSB8804LCMCoordinator = hass.data[DOMAIN][entry.entry_id]
 
   entities = [
-    ShinybowAllOutputsSelect(coordinator, entry),
+    PyxoShinybowAllOutputsSelect(coordinator, entry),
   ]
 
   entities.extend(
-    ShinybowOutputSelect(coordinator, entry, output_number)
+    PyxoShinybowOutputSelect(coordinator, entry, output_number)
     for output_number in range(1, OUTPUT_COUNT + 1)
   )
 
@@ -61,10 +61,10 @@ def _input_number_from_option(entry: ConfigEntry, option: str) -> int:
   )
 
 
-class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], SelectEntity):
+class PyxoShinybowAllOutputsSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], SelectEntity):
   def __init__(
     self,
-    coordinator: ShinybowSB8804LCMCoordinator,
+    coordinator: PyxoShinybowSB8804LCMCoordinator,
     entry: ConfigEntry,
   ) -> None:
     super().__init__(coordinator)
@@ -81,7 +81,7 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
 
   @property
   def available(self) -> bool:
-    return self.coordinator.last_update_success
+    return self.coordinator.connected
 
   @property
   def options(self) -> list[str]:
@@ -99,13 +99,13 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
 
     selected_inputs = set(routes.values())
 
-    if None in selected_inputs:
-      return None
-
     if len(selected_inputs) != 1:
       return None
 
     input_number = selected_inputs.pop()
+
+    if input_number is None:
+      return None
 
     if input_number == 0:
       return OPTION_OFF
@@ -118,10 +118,10 @@ class ShinybowAllOutputsSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], 
     await self.coordinator.async_set_all_outputs(input_number)
 
 
-class ShinybowOutputSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], SelectEntity):
+class PyxoShinybowOutputSelect(CoordinatorEntity[PyxoShinybowSB8804LCMCoordinator], SelectEntity):
   def __init__(
     self,
-    coordinator: ShinybowSB8804LCMCoordinator,
+    coordinator: PyxoShinybowSB8804LCMCoordinator,
     entry: ConfigEntry,
     output_number: int,
   ) -> None:
@@ -139,7 +139,7 @@ class ShinybowOutputSelect(CoordinatorEntity[ShinybowSB8804LCMCoordinator], Sele
 
   @property
   def available(self) -> bool:
-    return self.coordinator.last_update_success
+    return self.coordinator.connected
 
   @property
   def name(self) -> str:

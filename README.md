@@ -5,13 +5,15 @@ Home Assistant custom integration by **Pyxo Enterprises** for controlling a **Sh
 ## Features
 
 - Local RS232 control
-- Configurable serial port and RS232 settings
-- Named inputs and outputs
+- Serial port dropdown prefers `/dev/serial/by-id/*` paths when available
+- Configurable baud rate, data bits, parity, stop bits, and flow control
+- Setup can complete even when the matrix is not connected or powered on
+- Input and output names are entered during setup
+- Input and output names can also be edited later from integration options
 - Per-output source selection
 - Per-output volume control
 - Per-output balance control
 - All-outputs source selector
-- Can be configured even when the matrix is disconnected or powered off
 
 ## Supported device
 
@@ -56,13 +58,15 @@ The integration creates:
 - `Output 8 Volume`
 - `Output 8 Balance`
 
-Input and output names can be customized from the integration options.
+After naming outputs, entity names use the output names, for example:
+
+- `Theater Source`
+- `Theater Volume`
+- `Theater Balance`
 
 ## Serial port notes
 
-Use `/dev/serial/by-id/...` when possible instead of `/dev/ttyUSB0`, because `/dev/ttyUSB0` can change after reboot.
-
-The integration can be added even if the matrix is not connected. Entities will remain unavailable or unknown until the matrix responds.
+Use `/dev/serial/by-id/...` whenever possible instead of `/dev/ttyUSB0`, because `/dev/ttyUSB0` can change after reboot. The setup dropdown prefers `/dev/serial/by-id/*` paths when they exist.
 
 ## Created by
 
