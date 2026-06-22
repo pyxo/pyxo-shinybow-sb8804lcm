@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pyxo Shinybow SB-8804LCM",
+        "description": "Connect to a Shinybow SB-8804LCM 8x8 Digital Audio Matrix through a local RS232 serial port.",
+        "data": {
+          "name": "Name",
+          "serial_port": "Serial port",
+          "baudrate": "Baud rate",
+          "bytesize": "Data bits",
+          "parity": "Parity",
+          "stopbits": "Stop bits",
+          "flow_control": "Flow control"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This serial port is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Name inputs and outputs",
+        "description": "Set friendly names for the matrix inputs and outputs.",
+        "data": {
+          "input_1_name": "Input 1 name",
+          "input_2_name": "Input 2 name",
+          "input_3_name": "Input 3 name",
+          "input_4_name": "Input 4 name",
+          "input_5_name": "Input 5 name",
+          "input_6_name": "Input 6 name",
+          "input_7_name": "Input 7 name",
+          "input_8_name": "Input 8 name",
+          "output_1_name": "Output 1 name",
+          "output_2_name": "Output 2 name",
+          "output_3_name": "Output 3 name",
+          "output_4_name": "Output 4 name",
+          "output_5_name": "Output 5 name",
+          "output_6_name": "Output 6 name",
+          "output_7_name": "Output 7 name",
+          "output_8_name": "Output 8 name"
+        }
+      }
+    }
+  }
+}

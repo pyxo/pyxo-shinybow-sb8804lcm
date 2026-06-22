@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+DOMAIN = "pyxo_shinybow_sb8804lcm"
+
+DEVICE_MANUFACTURER = "Shinybow"
+DEVICE_MODEL = "SB-8804LCM 8x8 Digital Audio Matrix"
+
+CONF_NAME = "name"
+CONF_SERIAL_PORT = "serial_port"
+CONF_BAUDRATE = "baudrate"
+CONF_BYTESIZE = "bytesize"
+CONF_PARITY = "parity"
+CONF_STOPBITS = "stopbits"
+CONF_FLOW_CONTROL = "flow_control"
+
+CONF_INPUT_NAMES = "input_names"
+CONF_OUTPUT_NAMES = "output_names"
+
+DEFAULT_NAME = "Shinybow SB-8804LCM"
+DEFAULT_SERIAL_PORT = "/dev/ttyUSB0"
+DEFAULT_BAUDRATE = 9600
+DEFAULT_BYTESIZE = 8
+DEFAULT_PARITY = "N"
+DEFAULT_STOPBITS = 1
+DEFAULT_FLOW_CONTROL = "none"
+
+FLOW_CONTROL_NONE = "none"
+FLOW_CONTROL_RTSCTS = "rtscts"
+FLOW_CONTROL_XONXOFF = "xonxoff"
+FLOW_CONTROL_DSRDTR = "dsrdtr"
+
+OUTPUT_COUNT = 8
+INPUT_COUNT = 8
+
+OPTION_OFF = "Off"
+
+DATA_ROUTE = "route"
+DATA_VOLUME = "volume"
+DATA_BALANCE = "balance"
