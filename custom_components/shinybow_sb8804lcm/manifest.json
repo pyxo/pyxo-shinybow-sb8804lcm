@@ -1,0 +1,16 @@
+{
+  "domain": "shinybow_sb8804lcm",
+  "name": "Shinybow SB-8804LCM",
+  "version": "0.1.0",
+  "codeowners": [
+    "@pyxo"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/pyxo/pyxo-shinybow-sb8804lcm",
+  "issue_tracker": "https://github.com/pyxo/pyxo-shinybow-sb8804lcm/issues",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "requirements": [
+    "pyserial==3.5"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Shinybow SB-8804LCM",
+        "description": "Select the matrix serial port, preferably /dev/serial/by-id/. Uses 9600 8N1 without flow control. State is assumed until feedback is verified.",
+        "data": {
+          "name": "Name",
+          "serial_port": "Serial port"
+        }
+      },
+      "reconfigure": {
+        "title": "Shinybow SB-8804LCM",
+        "description": "Select the matrix serial port, preferably /dev/serial/by-id/. Uses 9600 8N1 without flow control. State is assumed until feedback is verified.",
+        "data": {
+          "name": "Name",
+          "serial_port": "Serial port"
+        }
+      }
+    },
+    "error": {
+      "invalid_config": "Enter a name and an absolute /dev/ serial device path."
+    },
+    "abort": {
+      "already_configured": "This serial port is already configured.",
+      "reconfigure_successful": "Serial configuration updated."
+    }
+  }
+}

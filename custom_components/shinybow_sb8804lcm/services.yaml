@@ -1,0 +1,103 @@
+{
+  "set_route": {
+    "name": "Set route",
+    "description": "Set route on the selected matrix. State is assumed.",
+    "fields": {
+      "entry_id": {
+        "name": "Matrix",
+        "required": true,
+        "selector": {
+          "config_entry": {
+            "integration": "shinybow_sb8804lcm"
+          }
+        }
+      },
+      "output": {
+        "name": "Output",
+        "required": true,
+        "selector": {
+          "number": {
+            "min": 1,
+            "max": 8,
+            "mode": "box"
+          }
+        }
+      },
+      "input": {
+        "name": "Input (0 = off)",
+        "required": true,
+        "selector": {
+          "number": {
+            "min": 0,
+            "max": 8,
+            "mode": "box"
+          }
+        }
+      }
+    }
+  },
+  "set_all_outputs": {
+    "name": "Set all outputs",
+    "description": "Set all outputs on the selected matrix. State is assumed.",
+    "fields": {
+      "entry_id": {
+        "name": "Matrix",
+        "required": true,
+        "selector": {
+          "config_entry": {
+            "integration": "shinybow_sb8804lcm"
+          }
+        }
+      },
+      "input": {
+        "name": "Input (0 = off)",
+        "required": true,
+        "selector": {
+          "number": {
+            "min": 0,
+            "max": 8,
+            "mode": "box"
+          }
+        }
+      }
+    }
+  },
+  "all_off": {
+    "name": "All off",
+    "description": "All off on the selected matrix. State is assumed.",
+    "fields": {
+      "entry_id": {
+        "name": "Matrix",
+        "required": true,
+        "selector": {
+          "config_entry": {
+            "integration": "shinybow_sb8804lcm"
+          }
+        }
+      }
+    }
+  },
+  "send_command": {
+    "name": "Send command",
+    "description": "Send command on the selected matrix. State is assumed.",
+    "fields": {
+      "entry_id": {
+        "name": "Matrix",
+        "required": true,
+        "selector": {
+          "config_entry": {
+            "integration": "shinybow_sb8804lcm"
+          }
+        }
+      },
+      "command": {
+        "name": "Command",
+        "required": true,
+        "example": "OUTPUT001 003;",
+        "selector": {
+          "text": {}
+        }
+      }
+    }
+  }
+}
