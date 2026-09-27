@@ -25,5 +25,34 @@
       "already_configured": "This serial port is already configured.",
       "reconfigure_successful": "Serial configuration updated."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Name inputs and outputs",
+        "description": "Assign names to the eight inputs and outputs. Blank names use the default. Input names must be unique and cannot be Off. Saving reloads the integration; assumed routing states become unknown until another command is sent.",
+        "data": {
+          "input_1": "Input 1 name",
+          "input_2": "Input 2 name",
+          "input_3": "Input 3 name",
+          "input_4": "Input 4 name",
+          "input_5": "Input 5 name",
+          "input_6": "Input 6 name",
+          "input_7": "Input 7 name",
+          "input_8": "Input 8 name",
+          "output_1": "Output 1 name",
+          "output_2": "Output 2 name",
+          "output_3": "Output 3 name",
+          "output_4": "Output 4 name",
+          "output_5": "Output 5 name",
+          "output_6": "Output 6 name",
+          "output_7": "Output 7 name",
+          "output_8": "Output 8 name"
+        }
+      }
+    },
+    "error": {
+      "duplicate_input_names": "Use distinct input names (ignoring capitalization). Off is reserved for turning outputs off."
+    }
   }
 }

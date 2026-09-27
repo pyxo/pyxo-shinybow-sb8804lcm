@@ -6,8 +6,10 @@ import voluptuous as vol
 from serial.tools import list_ports
 from homeassistant import config_entries
 from homeassistant.helpers import selector
+from homeassistant.core import callback
 
 from .const import CONF_SERIAL_PORT, DOMAIN, NAME
+from .names import channel_name, normalize_names
 
 
 def ports():
@@ -16,6 +18,12 @@ def ports():
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Offer channel naming for each matrix."""
+        return NamingOptionsFlow()
 
     async def async_step_user(self, user_input=None):
         return await self._form("user", user_input)
@@ -47,3 +55,29 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("name", default=defaults.get("name", NAME)): str,
             vol.Required(CONF_SERIAL_PORT, default=defaults.get(CONF_SERIAL_PORT, available[0] if available else "/dev/serial/by-id/")): selector.SelectSelector(selector.SelectSelectorConfig(options=available, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN)),
         }))
+
+
+class NamingOptionsFlow(config_entries.OptionsFlowWithReload):
+    """Edit all channel names and reload entities with stable unique IDs."""
+
+    async def async_step_init(self, user_input=None):
+        errors = {}
+        if user_input is not None:
+            try:
+                names = normalize_names(user_input)
+            except ValueError:
+                errors["base"] = "duplicate_input_names"
+            else:
+                return self.async_create_entry(
+                    title="", data={**self.config_entry.options, **names}
+                )
+        defaults = self.config_entry.options if user_input is None else user_input
+        fields = {
+            vol.Required(
+                f"{kind}_{i}", default=channel_name(defaults, kind, i)
+            ): str
+            for kind in ("input", "output") for i in range(1, 9)
+        }
+        return self.async_show_form(
+            step_id="init", data_schema=vol.Schema(fields), errors=errors
+        )

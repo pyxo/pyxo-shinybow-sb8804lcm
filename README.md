@@ -2,7 +2,7 @@
 
 Developed by **Pyxo** for the Shinybow SB-8804LCM 8×8 Audio Matrix.
 
-## Version 0.1.0
+## Version 0.2.0
 
 A fresh, local serial integration with UI setup, port reconfiguration, eight output source selectors, an all-outputs selector, and routing/raw-command actions. Multiple matrices and identical FTDI adapters are supported by selecting a separate serial interface for each matrix.
 
@@ -18,6 +18,14 @@ For manual installation, copy `custom_components/shinybow_sb8804lcm` into your c
 The serial device must be accessible to Home Assistant Core. Stop terminal readers or other integrations using that port. Setup saves configuration without requiring a reply; if the port cannot open, Home Assistant retries setup. Use the integration menu's **Reconfigure** to change the port while retaining entity identity.
 
 This is a fresh start with domain `shinybow_sb8804lcm`. Remove any previous `pyxo_shinybow_sb8804lcm` integration and its directory before installing. Old entity IDs and automations are not migrated.
+
+## Name inputs and outputs
+
+Open **Settings → Devices & services → Shinybow SB-8804LCM → Configure** (the gear/options button for your matrix). Enter names for inputs 1–8 and outputs 1–8, then save. For example, input 3 can be **TV** and output 1 **Living room**; the selector becomes **Living room source** with **TV** as a choice.
+
+Names are stored separately for each matrix and survive restarts. Blank fields restore default names. Input names must be unique (ignoring capitalization) and cannot be **Off**. Saving reloads the integration, so assumed routes become unknown until the next command. Entity IDs and numeric routing/action addresses remain unchanged. If you previously renamed an entity manually in Home Assistant, that custom entity name takes precedence.
+
+Automations using `select.select_option` must use the new input label after a rename. Numeric `set_route` and `set_all_outputs` actions are unaffected.
 
 ## Protocol and state
 

@@ -12,7 +12,7 @@ class MetadataTests(unittest.TestCase):
     def test_manifest_and_hacs(self):
         manifest = json.loads((COMPONENT / 'manifest.json').read_text())
         self.assertEqual(manifest['domain'], COMPONENT.name)
-        self.assertEqual(manifest['version'], '0.1.0')
+        self.assertEqual(manifest['version'], '0.2.0')
         self.assertEqual(manifest['iot_class'], 'assumed_state')
         self.assertEqual(manifest['requirements'], ['pyserial==3.5'])
         self.assertEqual(json.loads((ROOT / 'hacs.json').read_text())['name'], manifest['name'])
